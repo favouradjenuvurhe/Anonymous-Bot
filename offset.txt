@@ -1,11 +1,1 @@
-offset = 0
-
-try:
-    with open(OFFSET_FILE, "r") as f:
-        data = f.read().strip()
-
-        if data:
-            offset = int(data)
-
-except Exception as e:
-    print(e)
+64671454
