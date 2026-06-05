@@ -4,7 +4,7 @@ import requests
 
 TOKEN = os.getenv("BOT_TOKEN")
 
-BOT_USERNAME = "YOUR_BOT_USERNAME"
+BOT_USERNAME = "JoinLoCoBot"
 
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
