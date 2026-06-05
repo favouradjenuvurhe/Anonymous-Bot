@@ -13,25 +13,31 @@ MESSAGES_FILE = "messages.json"
 OFFSET_FILE = "offset.txt"
 
 
-def load_json(file, default):
+def load_json(filename, default):
     try:
-        with open(file, "r") as f:
+        with open(filename, "r") as f:
             return json.load(f)
     except:
         return default
 
 
-def save_json(file, data):
-    with open(file, "w") as f:
+def save_json(filename, data):
+    with open(filename, "w") as f:
         json.dump(data, f, indent=2)
 
 
 users = load_json(USERS_FILE, {})
 messages = load_json(MESSAGES_FILE, [])
 
+offset = 0
+
 try:
     with open(OFFSET_FILE, "r") as f:
-        offset = int(f.read().strip())
+        data = f.read().strip()
+
+        if data:
+            offset = int(data)
+
 except:
     offset = 0
 
@@ -42,13 +48,25 @@ def send_message(chat_id, text):
         json={
             "chat_id": chat_id,
             "text": text
-        }
+        },
+        timeout=30
     )
 
 
-updates = requests.get(
-    f"{BASE_URL}/getUpdates?offset={offset}"
-).json()
+try:
+
+    updates = requests.get(
+        f"{BASE_URL}/getUpdates",
+        params={
+            "offset": offset,
+            "timeout": 10
+        },
+        timeout=30
+    ).json()
+
+except Exception as e:
+    print(e)
+    exit()
 
 for update in updates.get("result", []):
 
@@ -60,7 +78,7 @@ for update in updates.get("result", []):
     msg = update["message"]
 
     chat_id = str(msg["chat"]["id"])
-    text = msg.get("text", "")
+    text = msg.get("text", "").strip()
 
     if chat_id not in users:
         users[chat_id] = {
@@ -90,32 +108,35 @@ for update in updates.get("result", []):
 
         send_message(
             chat_id,
-            f"""🎉 Welcome
+            f"""🤪 Welcome to LoCo!
 
 Your anonymous link:
 
 {my_link}
 
-Share this link and receive anonymous messages."""
+Share your link anywhere and receive anonymous messages."""
         )
 
         continue
 
-    waiting = users[chat_id].get("waiting_for")
+    waiting_for = users[chat_id].get("waiting_for")
 
-    if waiting:
+    if waiting_for:
 
         send_message(
-            waiting,
-            f"📩 New Anonymous Message:\n\n{text}"
+            waiting_for,
+            f"""📩 New Anonymous Message
+
+{text}"""
         )
 
         send_message(
             chat_id,
-            "✅ Anonymous message delivered."
+            "✅ Anonymous message sent successfully."
         )
 
         users[chat_id]["waiting_for"] = None
+
 
 save_json(USERS_FILE, users)
 save_json(MESSAGES_FILE, messages)
